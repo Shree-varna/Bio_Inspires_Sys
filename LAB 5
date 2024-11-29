@@ -1,0 +1,63 @@
+import numpy as np
+
+# Define the problem (a simple function to minimize)
+def objective_function(x):
+    return np.sum(x**2)  # Sphere function
+
+# GWO Algorithm
+def gwo(num_wolves, num_iterations, dim):
+    # Step 1: Initialize wolves' positions randomly
+    wolves = np.random.uniform(-10, 10, (num_wolves, dim))
+
+    # Step 2: Initialize alpha, beta, delta wolves' positions and fitness values
+    alpha_pos = np.zeros(dim)
+    beta_pos = np.zeros(dim)
+    delta_pos = np.zeros(dim)
+    alpha_score = float('inf')
+    beta_score = float('inf')
+    delta_score = float('inf')
+
+    # Step 3: Iterate for given number of iterations
+    for _ in range(num_iterations):
+        for i in range(num_wolves): #valuates each wolf's position and updates their fitness
+            fitness = objective_function(wolves[i])
+
+            # Update alpha, beta, and delta wolves
+            if fitness < alpha_score:
+                delta_score = beta_score
+                delta_pos = beta_pos
+                beta_score = alpha_score
+                beta_pos = alpha_pos
+                alpha_score = fitness
+                alpha_pos = wolves[i]
+            elif fitness < beta_score:
+                delta_score = beta_score
+                delta_pos = beta_pos
+                beta_score = fitness
+                beta_pos = wolves[i]
+            elif fitness < delta_score:
+                delta_score = fitness
+                delta_pos = wolves[i]
+
+        # Step 4: Update wolf positions
+        a = 2 - 2 * (_ / num_iterations)  # Decreasing factor
+        for i in range(num_wolves):
+            r1, r2 = np.random.rand(2)
+            A = 2 * a * r1 - a
+            C = 2 * r2
+            D_alpha = abs(C * alpha_pos - wolves[i])
+            D_beta = abs(C * beta_pos - wolves[i])
+            D_delta = abs(C * delta_pos - wolves[i])
+
+            wolves[i] = wolves[i] - A * D_alpha - A * D_beta - A * D_delta
+
+    return alpha_pos, alpha_score
+
+# Run GWO
+best_pos, best_score = gwo(30, 100, 2)
+print("Best Position:", best_pos)
+print("Best Score:", best_score)
+
+OUTPUT:
+Best Position: [3.35381149e+14 4.81097512e+13]
+Best Score: 4.108979235848214
