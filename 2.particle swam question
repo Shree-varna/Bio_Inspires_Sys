@@ -1,0 +1,79 @@
+import numpy as np
+import random
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+# Generate synthetic data for regression
+X = np.random.rand(100, 1) * 10  # 100 data points, 1 feature
+y = 3 * X.squeeze() + np.random.randn(100) * 2  # Linear relation with noise
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Define the loss function (e.g., Mean Squared Error)
+def loss_function(inertia_weight):
+    # Initialize and fit a simple regression model
+    reg = LinearRegression()
+    reg.fit(X_train, y_train)
+
+    # Predict on the test set
+    y_pred = reg.predict(X_test)
+
+    # Compute the error (MSE) as a proxy for fitness
+    return mean_squared_error(y_test, y_pred)
+
+# Particle Swarm Optimization to minimize the loss function
+def optimize_inertia_weight(num_particles=30, max_iterations=50, value_range=(0.1, 1.0)):
+    # Initialize particles
+    particles = []
+    for _ in range(num_particles):
+        position = random.uniform(value_range[0], value_range[1])  # Inertia weight value
+        velocity = random.uniform(-0.1, 0.1)  # Initial velocity
+        fitness = loss_function(position)
+        particles.append({
+            "position": position,
+            "velocity": velocity,
+            "best_position": position,
+            "best_fitness": fitness
+        })
+
+    # Initialize global best
+    global_best_position = None
+    global_best_fitness = float("inf")
+
+    # Main PSO loop
+    for _ in range(max_iterations):
+        for particle in particles:
+            # Evaluate fitness
+            fitness = loss_function(particle["position"])
+            # Update personal best
+            if fitness < particle["best_fitness"]:
+                particle["best_fitness"] = fitness
+                particle["best_position"] = particle["position"]
+            # Update global best
+            if fitness < global_best_fitness:
+                global_best_fitness = fitness
+                global_best_position = particle["position"]
+
+        # Update velocities and positions
+        for particle in particles:
+            inertia = 0.5 * particle["velocity"]
+            cognitive = 1.5 * random.random() * (particle["best_position"] - particle["position"])
+            social = 2.0 * random.random() * (global_best_position - particle["position"])
+            particle["velocity"] = inertia + cognitive + social
+
+            # Update position and clip within value range
+            particle["position"] += particle["velocity"]
+            particle["position"] = max(min(particle["position"], value_range[1]), value_range[0])
+
+    return global_best_position, global_best_fitness
+
+# Run PSO to find the optimal inertia weight
+best_inertia_weight, best_loss = optimize_inertia_weight()
+print(f"Best Inertia Weight: {best_inertia_weight}")
+print(f"Best Loss (MSE): {best_loss}")
+
+OUTPUT:
+Best Inertia Weight: 0.7063582623383444
+Best Loss (MSE): 4.8317959040035445
